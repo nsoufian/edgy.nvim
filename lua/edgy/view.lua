@@ -1,9 +1,10 @@
 local Editor = require("edgy.editor")
 local Util = require("edgy.util")
 local Window = require("edgy.window")
+local Config = require("edgy.config")
 
 ---@class Edgy.View.Opts
----@field ft string
+---@field ft? string
 ---@field filter? fun(buf:number, win:number):boolean?
 ---@field title? fun():string|string
 ---@field size? Edgy.Size
@@ -33,7 +34,7 @@ function M.new(opts, edgebar)
   local self = setmetatable(opts, M)
   self.edgebar = edgebar
   self.wins = {}
-  self.title = self.title or self.ft:sub(1, 1):upper() .. self.ft:sub(2)
+  self.title = self.title or (self.ft and (self.ft:sub(1, 1):upper() .. self.ft:sub(2)) or "No Filetype")
   self.get_title = function()
     if type(self.title) == "function" then
       return self.title()
@@ -63,7 +64,7 @@ function M:update(wins)
   self.wins = {}
   for _, win in ipairs(wins) do
     local buf = vim.api.nvim_win_get_buf(win)
-    if not self.filter or self.filter(buf, win) then
+    if (not Config.enable_file_type_view or not self.ft or vim.bo[buf].filetype == self.ft) and (not self.filter or self.filter(buf, win)) then
       self.wins[#self.wins + 1] = index[win] or Window.new(win, self)
     end
   end

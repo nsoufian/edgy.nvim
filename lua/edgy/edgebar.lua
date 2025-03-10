@@ -57,7 +57,11 @@ function M.new(pos, opts)
   self.dirty = true
   self.bounds = { width = 0, height = 0 }
   for _, v in ipairs(opts.views) do
-    v = type(v) == "string" and { ft = v } or v
+    if type(v) == "string" then
+      v = { ft = v }
+    elseif not v.ft and not v.filter then
+      error("Filter options are required when 'ft' is nil or not provided.")
+    end
     ---@cast v Edgy.View.Opts
     table.insert(self.views, View.new(v, self))
   end
@@ -141,16 +145,32 @@ function M:update(wins)
   local current = {} ---@type table<Edgy.View, Edgy.Window[]>
   for _, view in ipairs(self.views) do
     current[view] = view.wins
-    view:update(wins[view.ft] or {})
+    -- If ft is nil, collect all remaining windows
+    local view_wins = view.ft and (wins[view.ft] or {}) or vim.tbl_flatten(vim.tbl_values(wins))
+    view:update(view_wins)
     self.visible = self.visible + #view.wins
-    wins[view.ft] = vim.tbl_filter(function(w)
-      for _, win in ipairs(view.wins) do
-        if win.win == w then
-          return false
+    if view.ft then
+      wins[view.ft] = vim.tbl_filter(function(w)
+        for _, win in ipairs(view.wins) do
+          if win.win == w then
+            return false
+          end
         end
+        return true
+      end, wins[view.ft] or {})
+    else
+      -- Remove matched windows from all groups when ft is nil
+      for ft, win_list in pairs(wins) do
+        wins[ft] = vim.tbl_filter(function(w)
+          for _, win in ipairs(view.wins) do
+            if win.win == w then
+              return false
+            end
+          end
+          return true
+        end, win_list)
       end
-      return true
-    end, wins[view.ft] or {})
+    end
   end
   self:_update({ check = true })
 
@@ -267,10 +287,10 @@ function M:resize()
     if win.visible and dim then
       win[long] = M.size(dim, self.bounds[long])
       fixed[#fixed + 1] = win
-    -- auto-sized windows
+      -- auto-sized windows
     elseif win.visible then
       auto[#auto + 1] = win
-    -- hidden windows
+      -- hidden windows
     elseif self.vertical then
       win[long] = 1
     else

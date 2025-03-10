@@ -166,6 +166,10 @@ vim.opt.splitkeep = "screen"
     ["<c-w>="] = function(win)
       win.view.edgebar:equalize()
     end,
+    -- toggle file type view
+    ["<leader>ft"] = function()
+      require("edgy.commands").toggle_file_type_view()
+    end,
   },
   icons = {
     closed = " ",
@@ -174,6 +178,8 @@ vim.opt.splitkeep = "screen"
   -- enable this on Neovim <= 0.10.0 to properly fold edgebar windows.
   -- Not needed on a nightly build >= June 5, 2023.
   fix_win_height = vim.fn.has("nvim-0.10.0") == 0,
+  -- enable or disable file type view
+  enable_file_type_view = true,
 }
 ```
 
@@ -204,6 +210,7 @@ in your layout.
 | `Q`        | Close the edgebar       |
 | `]w`, `[w` | Next/Prev open window   |
 | `]W`, `[W` | Next/Prev loaded window |
+| `<leader>ft` | Toggle file type view |
 
 ### 🔌 API
 

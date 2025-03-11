@@ -3,7 +3,7 @@ local Util = require("edgy.util")
 local Window = require("edgy.window")
 
 ---@class Edgy.View.Opts
----@field ft string
+---@field ft? string
 ---@field filter? fun(buf:number, win:number):boolean?
 ---@field title? fun():string|string
 ---@field size? Edgy.Size
@@ -33,7 +33,7 @@ function M.new(opts, edgebar)
   local self = setmetatable(opts, M)
   self.edgebar = edgebar
   self.wins = {}
-  self.title = self.title or self.ft:sub(1, 1):upper() .. self.ft:sub(2)
+  self.title = self.title or (self.ft and (self.ft:sub(1, 1):upper() .. self.ft:sub(2)) or "All")
   self.get_title = function()
     if type(self.title) == "function" then
       return self.title()
